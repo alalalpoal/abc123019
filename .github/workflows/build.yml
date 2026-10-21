@@ -53,9 +53,11 @@ jobs:
       matrix:
         v:
           - name: A
-            ref: 4db17920db65b12aaa224a89ffc9464e709ae8aa
+            ref: c7dc01e33a8a1d958fd3dd036bd57a5fb773d20a
           - name: B
-            ref: main
+            ref: 13436953582c8bfa6d7a91392c9f575d5bafec83
+          - name: C
+            ref: 988d671cc43f3a676c23f986eefdd42c3506eed0
 
     name: iOS ${{ matrix.v.name }}
     runs-on: macos-latest
@@ -63,22 +65,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Get bindings and fix the FMOD header bug
-        run: |
-          git clone https://github.com/geode-sdk/bindings "$RUNNER_TEMP/bindings"
-          cd "$RUNNER_TEMP/bindings"
-          git checkout ${{ matrix.v.ref }}
-          for f in bindings/include/Geode/mapping/*.hpp; do
-            perl -pi -e 's#<Geode/fmod/fmod\.h>#<Geode/fmod/fmod.hpp>#' "$f"
-          done
-          grep -l "fmod.hpp" bindings/include/Geode/mapping/*.hpp
-          echo "GEODE_BINDINGS_REPO_PATH=$RUNNER_TEMP/bindings" >> "$GITHUB_ENV"
-
       - name: Build the mod
         id: build
         uses: geode-sdk/build-geode-mod@main
         with:
           target: iOS
+          bindings-ref: ${{ matrix.v.ref }}
+          configure-args: -DSKIP_BUILDING_CODEGEN=OFF
 
       - uses: actions/upload-artifact@v4
         with:
