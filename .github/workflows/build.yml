@@ -20,9 +20,6 @@ jobs:
           - name: Android64
             os: ubuntu-latest
             target: Android64
-          - name: iOS
-            os: macos-latest
-            target: iOS
 
     name: ${{ matrix.config.name }}
     runs-on: ${{ matrix.config.os }}
@@ -48,4 +45,40 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: Build Output
+          path: ${{ steps.build.outputs.build-output }}
+
+  ios:
+    strategy:
+      fail-fast: false
+      matrix:
+        v:
+          - name: A
+            os: macos-latest
+            ref: 988d671cc43f3a676c23f986eefdd42c3506eed0
+          - name: B
+            os: macos-latest
+            ref: 13436953582c8bfa6d7a91392c9f575d5bafec83
+          - name: C
+            os: macos-latest
+            ref: d6f3312f0886b2c285fd0d2593ebabdc03b6ca0c
+          - name: D
+            os: macos-15
+            ref: ''
+
+    name: iOS ${{ matrix.v.name }}
+    runs-on: ${{ matrix.v.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the mod
+        id: build
+        uses: geode-sdk/build-geode-mod@main
+        with:
+          target: iOS
+          bindings-ref: ${{ matrix.v.ref }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: iOS-${{ matrix.v.name }}
           path: ${{ steps.build.outputs.build-output }}
