@@ -53,36 +53,32 @@ jobs:
       matrix:
         v:
           - name: A
-            sdk: 5.10.1
-            ref: 7f6c2a75742856de88dad354e576dcff8a28e881
+            ref: 4db17920db65b12aaa224a89ffc9464e709ae8aa
           - name: B
-            sdk: 5.11.0
-            ref: f8aec5d1f3df76d840dfd2609f02cef30dc6efdf
-          - name: C
-            sdk: 5.10.1
-            ref: ''
-          - name: D
-            sdk: 5.8.2
-            ref: 7f6c2a75742856de88dad354e576dcff8a28e881
+            ref: main
 
-    name: iOS ${{ matrix.v.name }} (SDK ${{ matrix.v.sdk }})
+    name: iOS ${{ matrix.v.name }}
     runs-on: macos-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set mod.json to the SDK version being tested
+      - name: Get bindings and fix the FMOD header bug
         run: |
-          jq --arg v "${{ matrix.v.sdk }}" '.geode = $v' mod.json > mod.tmp
-          mv mod.tmp mod.json
-          cat mod.json
+          git clone https://github.com/geode-sdk/bindings "$RUNNER_TEMP/bindings"
+          cd "$RUNNER_TEMP/bindings"
+          git checkout ${{ matrix.v.ref }}
+          for f in bindings/include/Geode/mapping/*.hpp; do
+            perl -pi -e 's#<Geode/fmod/fmod\.h>#<Geode/fmod/fmod.hpp>#' "$f"
+          done
+          grep -l "fmod.hpp" bindings/include/Geode/mapping/*.hpp
+          echo "GEODE_BINDINGS_REPO_PATH=$RUNNER_TEMP/bindings" >> "$GITHUB_ENV"
 
       - name: Build the mod
         id: build
         uses: geode-sdk/build-geode-mod@main
         with:
           target: iOS
-          bindings-ref: ${{ matrix.v.ref }}
 
       - uses: actions/upload-artifact@v4
         with:
