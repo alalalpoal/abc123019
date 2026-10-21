@@ -53,23 +53,29 @@ jobs:
       matrix:
         v:
           - name: A
-            os: macos-latest
-            ref: 988d671cc43f3a676c23f986eefdd42c3506eed0
+            sdk: 5.10.1
+            ref: 7f6c2a75742856de88dad354e576dcff8a28e881
           - name: B
-            os: macos-latest
-            ref: 13436953582c8bfa6d7a91392c9f575d5bafec83
+            sdk: 5.11.0
+            ref: f8aec5d1f3df76d840dfd2609f02cef30dc6efdf
           - name: C
-            os: macos-latest
-            ref: d6f3312f0886b2c285fd0d2593ebabdc03b6ca0c
-          - name: D
-            os: macos-15
+            sdk: 5.10.1
             ref: ''
+          - name: D
+            sdk: 5.8.2
+            ref: 7f6c2a75742856de88dad354e576dcff8a28e881
 
-    name: iOS ${{ matrix.v.name }}
-    runs-on: ${{ matrix.v.os }}
+    name: iOS ${{ matrix.v.name }} (SDK ${{ matrix.v.sdk }})
+    runs-on: macos-latest
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set mod.json to the SDK version being tested
+        run: |
+          jq --arg v "${{ matrix.v.sdk }}" '.geode = $v' mod.json > mod.tmp
+          mv mod.tmp mod.json
+          cat mod.json
 
       - name: Build the mod
         id: build
