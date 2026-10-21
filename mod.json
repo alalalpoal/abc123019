@@ -1,0 +1,14 @@
+{
+	"geode": "5.11.2",
+	"gd": {
+		"win": "*",
+		"android": "*",
+		"ios": "*"
+	},
+	"version": "v1.0.0",
+	"id": "user.fourframebuffer",
+	"name": "4 Frame Buffer",
+	"developer": "You",
+	"description": "Locked 4-frame input buffer. No UI, no settings.",
+	"tags": ["gameplay", "utility"]
+}
