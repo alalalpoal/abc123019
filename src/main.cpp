@@ -17,6 +17,7 @@ namespace {
 
 	Pending g_pending[2];
 	bool g_firing = false;
+	int g_pressCount = 0; // how many presses the hook has seen (for the log)
 
 	bool canAct(PlayerObject* p) {
 		if (!p) return false;
@@ -31,6 +32,10 @@ namespace {
 	}
 }
 
+$on_mod(Loaded) {
+	log::info("[4FB] loaded, buffer = {:.1f} ms", BUFFER_SECONDS * 1000.f);
+}
+
 class $modify(FFBGameLayer, GJBaseGameLayer) {
 	void handleButton(bool down, int button, bool isPlayer1) {
 		if (!g_firing && button == 1 && classicPlay(this)) {
@@ -38,10 +43,17 @@ class $modify(FFBGameLayer, GJBaseGameLayer) {
 			auto* player = isPlayer1 ? m_player1 : m_player2;
 			if (down) {
 				st = Pending{};
-				if (!canAct(player)) st.active = true;
+				bool can = canAct(player);
+				if (++g_pressCount <= 30) {
+					log::info("[4FB] press seen (p{}): onGround={} ring={} canAct={}",
+						isPlayer1 ? 1 : 2, player ? player->m_isOnGround : false,
+						player ? player->m_touchedRing : false, can);
+				}
+				if (!can) st.active = true;
 			}
 			else if (st.active) {
 				st.released = true;
+				log::info("[4FB] released while buffered");
 			}
 		}
 		GJBaseGameLayer::handleButton(down, button, isPlayer1);
@@ -65,10 +77,12 @@ class $modify(FFBGameLayer, GJBaseGameLayer) {
 
 				st.age += dt;
 				if (st.age > BUFFER_SECONDS) {
+					log::info("[4FB] buffered tap expired");
 					st = Pending{};
 					continue;
 				}
 				if (st.released && canAct(player)) {
+					log::info("[4FB] REPLAYING tap after {:.1f} ms", st.age * 1000.f);
 					g_firing = true;
 					GJBaseGameLayer::handleButton(true, 1, isP1);
 					g_firing = false;
@@ -84,6 +98,7 @@ class $modify(FFBPlayLayer, PlayLayer) {
 	void resetLevel() {
 		g_pending[0] = Pending{};
 		g_pending[1] = Pending{};
+		g_pressCount = 0;
 		PlayLayer::resetLevel();
 	}
 };
